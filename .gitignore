@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Environnements virtuels
+venv/
+env/
+.env
+
+# Runs / logs / checkpoints (générés à l'entraînement)
+runs/
+
+# Pytest
+.pytest_cache/
+*.pytest_cache
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
