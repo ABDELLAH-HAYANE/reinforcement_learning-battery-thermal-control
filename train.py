@@ -183,7 +183,7 @@ def train(args):
             }
             logger.log_episode(ep=ep, total_steps=total_steps, **ep_metrics)
 
-            # Évaluation périodique
+            # Évaluation périodique — loggée dans evals.csv séparé
             if ep % args.eval_every == 0:
                 eval_metrics = evaluate(agent, eval_env)
                 print(
@@ -192,7 +192,7 @@ def train(args):
                     f"pct_safe={eval_metrics['eval_pct_safe']:.1f}%  |  "
                     f"T_max={eval_metrics['eval_T_max_mean']:.1f}°C"
                 )
-                logger.log_episode(ep=ep, total_steps=total_steps, **ep_metrics, **eval_metrics)
+                logger.log_eval(ep=ep, total_steps=total_steps, **eval_metrics)
 
             # Checkpoint
             if ep % args.save_every == 0:

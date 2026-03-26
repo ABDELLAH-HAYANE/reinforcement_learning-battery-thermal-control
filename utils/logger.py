@@ -37,10 +37,12 @@ class TrainingLogger:
         self._ep_lengths  = deque(maxlen=print_every)
 
         # Fichiers CSV
-        self._ep_file  = open(os.path.join(log_dir, "episodes.csv"),  "w", newline="")
-        self._upd_file = open(os.path.join(log_dir, "updates.csv"),   "w", newline="")
-        self._ep_writer  = None
-        self._upd_writer = None
+        self._ep_file   = open(os.path.join(log_dir, "episodes.csv"), "w", newline="")
+        self._upd_file  = open(os.path.join(log_dir, "updates.csv"),  "w", newline="")
+        self._eval_file = open(os.path.join(log_dir, "evals.csv"),    "w", newline="")
+        self._ep_writer   = None
+        self._upd_writer  = None
+        self._eval_writer = None
 
     # ------------------------------------------------------------------
 
@@ -75,6 +77,15 @@ class TrainingLogger:
         if ep % self.print_every == 0:
             self.print_summary(ep, total_steps)
 
+    def log_eval(self, ep: int, total_steps: int, **kwargs) -> None:
+        """Enregistre les métriques d'une évaluation déterministe dans evals.csv."""
+        row = {"ep": ep, "total_steps": total_steps, **kwargs}
+        if self._eval_writer is None:
+            self._eval_writer = csv.DictWriter(self._eval_file, fieldnames=list(row.keys()))
+            self._eval_writer.writeheader()
+        self._eval_writer.writerow(row)
+        self._eval_file.flush()
+
     def log_update(self, step: int, **kwargs) -> None:
         """Enregistre les métriques d'une update SAC."""
         row = {"step": step, **kwargs}
@@ -99,3 +110,4 @@ class TrainingLogger:
     def close(self) -> None:
         self._ep_file.close()
         self._upd_file.close()
+        self._eval_file.close()

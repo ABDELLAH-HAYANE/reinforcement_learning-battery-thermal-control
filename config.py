@@ -26,9 +26,10 @@ class ThermalConfig:
     T_init_max: float = 30.0  # Température initiale max [°C]
     T_amb_min: float = 15.0   # Température ambiante min [°C]
     T_amb_max: float = 35.0   # Température ambiante max [°C]
-    T_safe_min: float = 15.0  # Seuil bas de température sûre [°C]
-    T_safe_max: float = 45.0  # Seuil haut de température sûre [°C]
-    T_cutoff: float = 60.0    # Coupure de sécurité (fin d'épisode) [°C]
+    T_safe_min: float = 15.0   # Seuil bas de température sûre [°C]
+    T_safe_max: float = 45.0   # Seuil haut de température sûre [°C]
+    T_warning: float = 40.0    # Seuil d'alerte dT/dt — pénalise les montées rapides au-delà [°C]
+    T_cutoff: float = 60.0     # Coupure de sécurité (fin d'épisode) [°C]
 
     # --- SoC initial ---
     SoC_init_min: float = 0.2  # SoC initial min [fraction 0-1]
@@ -42,10 +43,11 @@ class ThermalConfig:
 @dataclass
 class RewardConfig:
     # Poids de la fonction de récompense — à tuner selon les priorités
-    w_temp_high: float = 2.0   # Pénalité dépassement haut (quadratique)
+    w_temp_high: float = 5.0   # Pénalité dépassement haut (quadratique) — ↑ pour punir plus fort les pics
     w_temp_low: float = 1.0    # Pénalité dépassement bas (quadratique)
-    w_cooling: float = 0.05    # Coût énergétique du refroidissement
+    w_cooling: float = 0.01    # Coût énergétique du refroidissement — ↓ pour autoriser plus de cooling
     w_soc: float = 0.1         # Bonus progression de charge
+    w_delta_T: float = 0.5     # Pénalité vitesse de montée thermique (anticipe les pics)
 
 
 @dataclass

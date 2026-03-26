@@ -68,6 +68,7 @@ class BatteryThermalEnv(gym.Env):
 
         # État interne
         self._T: float = 0.0
+        self._T_prev: float = 0.0   # température au step précédent (pour dT/dt)
         self._SoC: float = 0.0
         self._T_amb: float = 0.0
         self._I: float = 0.0
@@ -85,6 +86,7 @@ class BatteryThermalEnv(gym.Env):
         super().reset(seed=seed)
 
         self._T = self.np_random.uniform(self.tc.T_init_min, self.tc.T_init_max)
+        self._T_prev = self._T
         self._SoC = self.np_random.uniform(self.tc.SoC_init_min, self.tc.SoC_init_max)
         self._T_amb = self.np_random.uniform(self.tc.T_amb_min, self.tc.T_amb_max)
         self._I = self._sample_current()
@@ -101,6 +103,7 @@ class BatteryThermalEnv(gym.Env):
         action_scalar = float(np.clip(np.asarray(action).flat[0], 0.0, 1.0))
 
         SoC_prev = self._SoC
+        T_prev   = self._T   # pour calcul dT
 
         # --- Mise à jour thermique ---
         T_next, P_gen, P_cool = self.model.step(
@@ -117,13 +120,15 @@ class BatteryThermalEnv(gym.Env):
         self._T_amb = self._update_T_amb()
 
         # --- Sauvegarde état ---
+        self._T_prev = T_prev
         self._T = T_next
         self._SoC = SoC_next
         self._action_prev = action_scalar
         self._step_count += 1
 
         # --- Récompense ---
-        reward = self._compute_reward(T_next, SoC_next, action_scalar, SoC_prev)
+        dT = T_next - T_prev
+        reward = self._compute_reward(T_next, SoC_next, action_scalar, SoC_prev, dT=dT)
 
         # --- Conditions de fin ---
         terminated = bool(T_next > self.tc.T_cutoff or SoC_next >= 1.0)
@@ -185,17 +190,26 @@ class BatteryThermalEnv(gym.Env):
         }
 
     def _compute_reward(
-        self, T: float, SoC: float, action: float, SoC_prev: float
+        self, T: float, SoC: float, action: float, SoC_prev: float, dT: float = 0.0
     ) -> float:
         rc = self.rc
         tc = self.tc
 
+        # Pénalités thermiques (quadratiques)
         penalty_high = rc.w_temp_high * max(0.0, T - tc.T_safe_max) ** 2
-        penalty_low = rc.w_temp_low * max(0.0, tc.T_safe_min - T) ** 2
+        penalty_low  = rc.w_temp_low  * max(0.0, tc.T_safe_min - T) ** 2
+
+        # Coût énergétique du refroidissement
         cost_cooling = rc.w_cooling * action
+
+        # Bonus progression de charge
         bonus_soc = rc.w_soc * max(0.0, SoC - SoC_prev)
 
-        return float(-penalty_high - penalty_low - cost_cooling + bonus_soc)
+        # Pénalité vitesse de montée thermique — anticipe les pics
+        # Pénalise uniquement si T dépasse T_warning ET monte (dT > 0)
+        penalty_rise = rc.w_delta_T * max(0.0, dT) * max(0.0, T - tc.T_warning)
+
+        return float(-penalty_high - penalty_low - cost_cooling + bonus_soc - penalty_rise)
 
     def _sample_current(self) -> float:
         """Courant initial aléatoire dans la plage configurée."""
