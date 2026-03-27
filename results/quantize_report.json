@@ -1,0 +1,12 @@
+{
+  "checkpoint": "runs\\day7_tuned\\checkpoints\\sac_final.pt",
+  "fp32_size_kb": 526.18,
+  "int8_size_kb": 140.11,
+  "compression_ratio": 3.755,
+  "latency_fp32_ms": 0.1161,
+  "latency_int8_ms": 0.3482,
+  "speedup": 0.333,
+  "max_action_error": 2.55516148,
+  "onnx_size_kb": 522.43,
+  "onnx_vs_pt_error": null
+}

@@ -20,6 +20,18 @@ runs/
 .ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 
+# Modèles binaires lourds (garder uniquement ONNX + JSON)
+results/actor_fp32.pt
+results/actor_int8.pt
+
+# Paramètres locaux Claude
+.claude/
+
+# node_modules (docx generation)
+node_modules/
+package-lock.json
+package.json
+
 # OS
 .DS_Store
 Thumbs.db

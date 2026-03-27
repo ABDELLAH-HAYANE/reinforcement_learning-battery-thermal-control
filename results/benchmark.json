@@ -1,0 +1,42 @@
+{
+  "SAC": {
+    "return_mean": -16429.07,
+    "return_std": 13169.24,
+    "pct_safe_mean": 66.31,
+    "pct_safe_std": 31.31,
+    "T_max_mean": 58.27,
+    "n_episodes": 15
+  },
+  "PID": {
+    "return_mean": -18869.22,
+    "return_std": 12033.01,
+    "pct_safe_mean": 82.05,
+    "pct_safe_std": 19.45,
+    "T_max_mean": 57.68,
+    "n_episodes": 15
+  },
+  "BangBang": {
+    "return_mean": -21783.33,
+    "return_std": 15983.53,
+    "pct_safe_mean": 73.89,
+    "pct_safe_std": 21.66,
+    "T_max_mean": 57.96,
+    "n_episodes": 15
+  },
+  "Proportional": {
+    "return_mean": -20676.31,
+    "return_std": 13671.79,
+    "pct_safe_mean": 80.78,
+    "pct_safe_std": 20.66,
+    "T_max_mean": 57.95,
+    "n_episodes": 15
+  },
+  "Hysteresis": {
+    "return_mean": -20012.88,
+    "return_std": 13980.55,
+    "pct_safe_mean": 79.98,
+    "pct_safe_std": 20.68,
+    "T_max_mean": 57.74,
+    "n_episodes": 15
+  }
+}

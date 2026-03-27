@@ -59,6 +59,9 @@ class BangBangController:
         action = 1.0 if T > self.tc.T_safe_max else 0.0
         return np.array([action], dtype=np.float32)
 
+    def reset(self) -> None:
+        pass
+
 
 class ProportionalController:
     """
@@ -84,6 +87,9 @@ class ProportionalController:
         error  = T - self._T_opt
         action = float(np.clip(self.gain * error / self._T_range, 0.0, 1.0))
         return np.array([action], dtype=np.float32)
+
+    def reset(self) -> None:
+        pass
 
 
 class HysteresisController:
@@ -121,3 +127,66 @@ class HysteresisController:
     def reset(self) -> None:
         """À appeler entre chaque épisode pour réinitialiser l'état interne."""
         self._cooling_on = False
+
+
+class PIDController:
+    """
+    Contrôleur PID pour le refroidissement thermique batterie.
+
+    Setpoint = T_opt = (T_safe_min + T_safe_max) / 2
+
+    Loi de commande :
+        error     = T - T_opt
+        u(t)      = Kp*e + Ki*∫e dt + Kd*de/dt
+        action    = clip(u / u_max, 0, 1)
+
+    Anti-windup : l'intégrale est bornée à [-windup_limit, +windup_limit]
+    pour éviter la saturation lors de grands dépassements prolongés.
+
+    Paramètres par défaut calibrés pour BatteryThermalEnv (T_safe=[15,45]°C) :
+        Kp = 0.05   — proportionnel : ~0.5 d'action pour 10°C d'erreur
+        Ki = 0.002  — intégral      : correction lente des erreurs persistantes
+        Kd = 0.10   — dérivé        : amortit les montées rapides
+    """
+
+    def __init__(
+        self,
+        tc: ThermalConfig = None,
+        Kp: float = 0.05,
+        Ki: float = 0.002,
+        Kd: float = 0.10,
+        windup_limit: float = 20.0,
+    ):
+        self.tc           = tc or ThermalConfig()
+        self.Kp           = Kp
+        self.Ki           = Ki
+        self.Kd           = Kd
+        self.windup_limit = windup_limit
+        self._T_opt       = (self.tc.T_safe_min + self.tc.T_safe_max) / 2.0
+        self._integral    = 0.0
+        self._prev_error  = 0.0
+
+    def select_action(self, obs: np.ndarray, deterministic: bool = True) -> np.ndarray:
+        T     = _denorm_T(float(obs[0]), self.tc)
+        error = T - self._T_opt
+        dt    = self.tc.dt
+
+        # Terme intégral avec anti-windup
+        self._integral = float(np.clip(
+            self._integral + error * dt,
+            -self.windup_limit,
+            self.windup_limit,
+        ))
+
+        # Terme dérivé
+        derivative = (error - self._prev_error) / dt
+        self._prev_error = error
+
+        u = self.Kp * error + self.Ki * self._integral + self.Kd * derivative
+        action = float(np.clip(u, 0.0, 1.0))
+        return np.array([action], dtype=np.float32)
+
+    def reset(self) -> None:
+        """À appeler entre chaque épisode pour réinitialiser l'intégrateur."""
+        self._integral   = 0.0
+        self._prev_error = 0.0
